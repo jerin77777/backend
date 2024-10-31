@@ -7,7 +7,7 @@ import base64
 import json
 
 from rag import getRag 
-from gen import gen
+from gen import gen, nim
 from speech import speak
 
 
@@ -25,7 +25,8 @@ cors = CORS(app, resources={r"/static/*": {"origins": "*"}})
 @app.route('/')
 @cross_origin()
 def index():
-    return render_template('index.html')
+    return "Welcome to my Flask app!"
+    # return render_template('index.html')
 
 
 @app.route('/file', methods=['POST'])
@@ -47,13 +48,21 @@ def handle_rag():
 
     return str(result)
 
-
-
 @app.route('/gen', methods=['POST'])
 @cross_origin()
 def handle_gen():
 
     result = gen(req.json["query"])
+
+    print((result))
+
+    return str(result)
+
+@app.route('/nim', methods=['POST'])
+@cross_origin()
+def handle_nim():
+
+    result = nim(req.json["model"], req.json["query"])
 
     print((result))
 
