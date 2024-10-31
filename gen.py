@@ -1,8 +1,6 @@
 from openai import OpenAI
 import os 
 
-
-
 def gen(query):
 
     client = OpenAI(
@@ -42,4 +40,6 @@ def nim(model, query):
             result += chunk.choices[0].delta.content
 
     result = result.replace("```","").replace("```","")
+
+    return result
 
