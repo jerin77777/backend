@@ -6,7 +6,7 @@ import os
 def gen(query):
 
     client = OpenAI(
-        api_key = os.getenv("key") 
+        api_key = os.getenv("OPEN_AI_KEY") 
     )
 
     response = client.chat.completions.create(
