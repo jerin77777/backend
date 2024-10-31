@@ -11,7 +11,6 @@ import os
 def getRag(query):
 
 
-    # Here we are using mixtral-8x7b-instruct-v0.1 model from API Catalog
     Settings.llm = NVIDIA(model="mistralai/mixtral-8x7b-instruct-v0.1")
 
     Settings.embed_model = NVIDIAEmbedding(model="NV-Embed-QA", truncate="END")
