@@ -21,10 +21,19 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 cors = CORS(app, resources={r"/static/*": {"origins": "*"}})
 
 
+
+
 @app.route('/')
 @cross_origin()
 def index():
     return "hello!!"
+
+
+@app.route('/ping', methods=['POST'])
+@cross_origin()
+def handle_ping():
+
+    return {"data":"hi"}
 
 
 @app.route('/file', methods=['POST'])
@@ -38,6 +47,7 @@ def handle_file():
 
     return {"status":200}
 
+
 @app.route('/rag', methods=['POST'])
 @cross_origin()
 def handle_rag():
@@ -45,6 +55,7 @@ def handle_rag():
     result = getRag(req.json["query"])
 
     return str(result)
+
 
 @app.route('/samba', methods=['POST'])
 @cross_origin()
