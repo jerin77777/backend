@@ -7,9 +7,9 @@ import base64
 import json
 
 from rag import getRag 
-from gen import gen, nim
+from gen import samba
 from speech import speak
-
+import os 
 
 # logging.basicConfig(level=logging.DEBUG)
 
@@ -21,12 +21,10 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 cors = CORS(app, resources={r"/static/*": {"origins": "*"}})
 
 
-
 @app.route('/')
 @cross_origin()
 def index():
-    return "Welcome to my Flask app!"
-    # return render_template('index.html')
+    return "hello!!"
 
 
 @app.route('/file', methods=['POST'])
@@ -48,21 +46,11 @@ def handle_rag():
 
     return str(result)
 
-@app.route('/gen', methods=['POST'])
-@cross_origin()
-def handle_gen():
-
-    result = gen(req.json["query"])
-
-    print((result))
-
-    return str(result)
-
-@app.route('/nim', methods=['POST'])
+@app.route('/samba', methods=['POST'])
 @cross_origin()
 def handle_nim():
 
-    result = nim(req.json["model"], req.json["query"])
+    result = samba(req.json["model"], req.json["query"])
 
     print((result))
 
@@ -82,9 +70,6 @@ def handle_speech():
     print(type(result["audio"]))
 
     return json.dumps(result)
-
-
-
 
 
 # socketio.run(app, host="0.0.0.0", port=5000, debug=False)

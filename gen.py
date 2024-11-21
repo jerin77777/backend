@@ -1,45 +1,21 @@
 from openai import OpenAI
 import os 
 
-def gen(query):
+
+def samba(model, query):
 
     client = OpenAI(
-        api_key = os.getenv("OPEN_AI_KEY") 
+        api_key=os.environ.get('SAMBA_KEY'),
+        base_url="https://api.sambanova.ai/v1",
     )
 
     response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[{"role": "user", "content": query}],
-        stream=False,
-    )
-
-    result =  response.choices[0].message.content.replace("```json","").replace("```","")
-    return result
-
-
-def nim(model, query):
-
-    client = OpenAI(
-        base_url = "https://integrate.api.nvidia.com/v1",
-        api_key = os.getenv("NVIDIA_API_KEY") 
-    )
-
-    completion = client.chat.completions.create(
+        # model='Meta-Llama-3.1-70B-Instruct',
         model=model,
-        messages=[{"role":"user","content":query}],
-        temperature=0.2,
-        top_p=0.7,
-        max_tokens=1024,
-        stream=True
+        messages=[{"role": "system", "content": "You are a helpful assistant"}, {"role": "user", "content": query}],
+        temperature =  0.1,
+        top_p = 0.1
     )
 
-    result = ""
-
-    for chunk in completion:
-        if chunk.choices[0].delta.content is not None:
-            result += chunk.choices[0].delta.content
-
-    result = result.replace("```","").replace("```","")
-
-    return result
+    return response.choices[0].message.content
 

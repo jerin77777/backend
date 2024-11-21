@@ -6,7 +6,6 @@ from llama_index.core import SimpleDirectoryReader
 from llama_index.postprocessor.nvidia_rerank import NVIDIARerank
 from llama_index.core import VectorStoreIndex
 
-import os 
 
 def getRag(query):
 
