@@ -47,16 +47,16 @@ def speak(text, language):
     speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=service_region)
     # Note: the voice setting will not overwrite the voice element in input SSML.
     if language == "Tamil":
-        text = translate("ta","this is a test")
+        text = translate("ta",text)
         speech_config.speech_synthesis_voice_name = "ta-IN-PallaviNeural"
     elif language == "Hindi":
-        text = translate("hi","this is a test")
+        text = translate("hi",text)
         speech_config.speech_synthesis_voice_name = "hi-IN-AaravNeural"
     elif language == "French":
-        text = translate("fr","this is a test")
+        text = translate("fr",text)
         speech_config.speech_synthesis_voice_name = "fr-BE-CharlineNeural"
     elif language == "Mandrin":
-        text = translate("zh-CN","this is a test")
+        text = translate("zh-CN",text)
         speech_config.speech_synthesis_voice_name = "yue-CN-XiaoMinNeural"
     else:
         speech_config.speech_synthesis_voice_name = "en-US-TonyNeural"
