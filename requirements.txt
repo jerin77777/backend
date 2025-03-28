@@ -6,3 +6,4 @@ flask-cors
 gevent
 azure-cognitiveservices-speech
 pypdf
+faiss-cpu
