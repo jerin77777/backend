@@ -8,9 +8,11 @@ from langchain.prompts import PromptTemplate
 
 from langchain.chains import RetrievalQA
 
+
+
 def getRag(query):
     llm = AzureChatOpenAI(
-        azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+        azure_endpoint="https://tuesday-engine.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-08-01-preview",
         api_key=os.environ["AZURE_OPENAI_KEY"],
         api_version="2024-08-01-preview"
     )
