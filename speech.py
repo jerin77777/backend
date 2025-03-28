@@ -1,96 +1,80 @@
-import os
 import azure.cognitiveservices.speech as speechsdk
-import json
-import soundex
-import time
-import uuid
+import requests, uuid
 
+def translate(lang,text):
 
-def speak(text):
-    speech_config = speechsdk.SpeechConfig(subscription='5fdcf0d212a341f58d4e3d09ff834b03', region='eastus')
-    speech_config.request_word_level_timestamps()
-    speech_config.speech_synthesis_voice_name = "en-US-TonyNeural"
+    # Add your key and endpoint
+    key = "43KRHJjHtaXM4IlBdLHcePSnwsLORsBPuwyRSIsiRxVLZ0pj411aJQQJ99BCACYeBjFXJ3w3AAAbACOGGGD4"
+    endpoint = "https://api.cognitive.microsofttranslator.com"
+
+    # location, also known as region.
+    # required if you're using a multi-service or regional (not global) resource. It can be found in the Azure portal on the Keys and Endpoint page.
+    location = "eastus"
+
+    path = '/translate'
+    constructed_url = endpoint + path
+
+    params = {
+        'api-version': '3.0',
+        'from': 'en',
+        'to': [lang]
+    }
+
+    headers = {
+        'Ocp-Apim-Subscription-Key': key,
+        'Ocp-Apim-Subscription-Region': location,
+        'Content-type': 'application/json',
+        'X-ClientTraceId': str(uuid.uuid4())
+    }
+
+    # You can pass more than one object in body.
+    body = [{
+        'text': text
+    }]
+
+    request = requests.post(constructed_url, params=params, headers=headers, json=body)
+    response = request.json()
+    
+
+    print(response[0]["translations"][0]["text"])
+    return response[0]["translations"][0]["text"] 
+
+def speak(text, language):
+
+    speech_key = "7U9EHOPrkB302J9N0HNN94HGc1SpROCIajP3VU7M7vMc3JvvNI7NJQQJ99BCACYeBjFXJ3w3AAAYACOGx23h"
+    service_region = "eastus"
+
+    speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=service_region)
+    # Note: the voice setting will not overwrite the voice element in input SSML.
+    if language == "Tamil":
+        text = translate("ta","this is a test")
+        speech_config.speech_synthesis_voice_name = "ta-IN-PallaviNeural"
+    elif language == "Hindi":
+        text = translate("hi","this is a test")
+        speech_config.speech_synthesis_voice_name = "hi-IN-AaravNeural"
+    elif language == "French":
+        text = translate("fr","this is a test")
+        speech_config.speech_synthesis_voice_name = "fr-BE-CharlineNeural"
+    elif language == "Mandrin":
+        text = translate("zh-CN","this is a test")
+        speech_config.speech_synthesis_voice_name = "yue-CN-XiaoMinNeural"
+    else:
+        speech_config.speech_synthesis_voice_name = "en-US-TonyNeural"
+
 
     audio_config = speechsdk.audio.AudioOutputConfig(use_default_speaker=True,filename=f"./speech/audio.wav")
-
+    # use the default speaker as audio output.
     speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=audio_config)
 
-
-    speech_synthesis_result = speech_synthesizer.speak_text_async(text).get()
-
-    if speech_synthesis_result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
+    result = speech_synthesizer.speak_text_async(text).get()
+    # Check result
+    if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
         print("Speech synthesized for text [{}]".format(text))
+    elif result.reason == speechsdk.ResultReason.Canceled:
+        cancellation_details = result.cancellation_details
+        print("Speech synthesis canceled: {}".format(cancellation_details.reason))
+        if cancellation_details.reason == speechsdk.CancellationReason.Error:
+            print("Error details: {}".format(cancellation_details.error_details))
 
+    return {"text": text}
 
-
-    speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_config)
-
-    done = False
-    word_timings = []
-    final_word_timings = []
-
-    for word in text.split(" "):
-        word_timings.append({"word": word, "offset": 0.0})
-
-    def get_word_timings(data):
-        nonlocal word_timings
-        nonlocal final_word_timings
-
-        data_set = []
-
-        for word in data['NBest']:
-            data_set.append(word)
-
-        for word in word_timings:
-            confidences = []
-            data_idx = 0
-            for data in data_set:
-                found = False
-                for i in range(0, 3):
-                    s = soundex.getInstance()
-                    if i < len(data['Words']):
-                        if s.soundex(word['word'].lower()) == s.soundex(data['Words'][i]['Word'].lower()):
-                            found = True
-                            confidences.append({"offset": data['Words'][i]['Offset'], "confidence": data['Words'][i]['Confidence']})
-                            data['Words'] = data['Words'][slice(i, len(data['Words']))]
-
-                if found == False and len(data_set[data_idx]['Words']) != 0:
-                    confidences.append({"offset": data_set[data_idx]['Words'][0]['Offset'], "confidence": data_set[data_idx]['Words'][0]['Confidence']})
-                    data_set[data_idx]['Words'].pop(0)
-
-                data_idx += 1
-
-            max_confidence = 0
-
-            for confidence in confidences:
-                if confidence["confidence"] > max_confidence:
-                    max_confidence = confidence["confidence"]
-
-            for confidence in confidences:
-                if confidence["confidence"] == max_confidence:
-                    word["offset"] = confidence["offset"] / 10000
-
-        cn = 0
-        for word in word_timings:
-            if word["offset"] != 0.0:
-                cn += 1
-                final_word_timings.append(word)
-
-        word_timings = word_timings[slice(cn, len(word_timings) + 1)]
-
-    speech_recognizer.recognized.connect(lambda evt: get_word_timings(json.loads(evt.result.json)))
-
-    def stop_cb(evt):
-        # print('CLOSING on {}'.format(evt))
-        speech_recognizer.stop_continuous_recognition()
-        nonlocal done
-        done = True
-
-    speech_recognizer.session_stopped.connect(stop_cb)
-    speech_recognizer.canceled.connect(stop_cb)
-
-    speech_recognizer.start_continuous_recognition()
-    while not done:
-        time.sleep(.5)
-
-    return {"word_timings":final_word_timings}

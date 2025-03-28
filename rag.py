@@ -1,34 +1,60 @@
-from llama_index.core import Settings
-from llama_index.llms.nvidia import NVIDIA
-from llama_index.embeddings.nvidia import NVIDIAEmbedding
-from llama_index.core.node_parser import SentenceSplitter
-from llama_index.core import SimpleDirectoryReader
-from llama_index.postprocessor.nvidia_rerank import NVIDIARerank
-from llama_index.core import VectorStoreIndex
+import os
+from langchain_openai import AzureChatOpenAI
 
+from langchain_openai import AzureOpenAIEmbeddings
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.vectorstores import FAISS
+from langchain.prompts import PromptTemplate
+
+from langchain.chains import RetrievalQA
 
 def getRag(query):
-
-    Settings.llm = NVIDIA(model="mistralai/mixtral-8x7b-instruct-v0.1")
-
-    Settings.embed_model = NVIDIAEmbedding(model="NV-Embed-QA", truncate="END")
-
-
-    Settings.text_splitter = SentenceSplitter(chunk_size=400)
-    documents = SimpleDirectoryReader("./data/").load_data()
-
-    index = VectorStoreIndex.from_documents(documents)
-
-    reranker_query_engine = index.as_query_engine(
-        similarity_top_k=40, node_postprocessors=[NVIDIARerank(top_n=4)]
+    llm = AzureChatOpenAI(
+        azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+        api_key=os.environ["AZURE_OPENAI_KEY"],
+        api_version="2024-08-01-preview"
     )
 
-    response = reranker_query_engine.query(
-        query
+    embeddings = AzureOpenAIEmbeddings(
+        azure_endpoint="https://tuesday-engine.openai.azure.com/openai/deployments/text-embedding-3-large/embeddings?api-version=2023-05-15",
+        api_key=os.environ["AZURE_OPENAI_KEY"],
+        model="text-embedding-3-large",
     )
 
-    return response
+
+    loader = PyPDFLoader(f"./data/data.pdf")
+    texts = loader.load_and_split()
+
+    doc_search = FAISS.from_documents(texts, embeddings)
 
 
+    prompt_template = """
+    Answer the question as detailed as possible from the provided context, make sure to provide all the details,
+    Context:\n {context}?\n
+    Question: \n{question}\n
+
+    Answer:
+    """
+
+    prompt = PromptTemplate(
+        template=prompt_template, input_variables=["context", "question"]
+    )
+
+    chain = RetrievalQA.from_chain_type(
+        llm=llm, 
+        chain_type="stuff", 
+        retriever=doc_search.as_retriever(
+            search_type="similarity", search_kwargs={"k" : 6 }
+        ),
+        verbose=False,
+        return_source_documents=True,
+        chain_type_kwargs={"prompt": prompt},
+    )
+
+
+
+    response = chain.invoke({"query": query})
+
+    return response["result"]
 
 

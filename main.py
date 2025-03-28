@@ -7,20 +7,15 @@ import base64
 import json
 
 from rag import getRag 
-from gen import samba
 from speech import speak
 import os 
 
-# logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
-# run_with_ngrok(app)
 app.config['SECRET_KEY'] = 'secret!'
 app.config['CORS_HEADERS'] = 'Content-Type'
 
 cors = CORS(app, resources={r"/static/*": {"origins": "*"}})
-
-
 
 
 @app.route('/')
@@ -57,22 +52,12 @@ def handle_rag():
     return str(result)
 
 
-@app.route('/samba', methods=['POST'])
-@cross_origin()
-def handle_nim():
-
-    result = samba(req.json["model"], req.json["query"])
-
-    print((result))
-
-    return str(result)
-
 
 @app.route('/speech', methods=['POST'])
 @cross_origin()
 def handle_speech():
 
-    result = speak(req.json["text"])
+    result = speak(req.json["text"], req.json["language"])
 
     with open("speech/audio.wav", 'rb') as file:
         binary_data = file.read()  # Read the entire file
@@ -82,9 +67,6 @@ def handle_speech():
 
     return json.dumps(result)
 
-
-# socketio.run(app, host="0.0.0.0", port=5000, debug=False)
-# app.run(host="0.0.0.0", port=5000, debug=False)
 
 http_server = WSGIServer(('0.0.0.0', 5000), app)
 http_server.serve_forever()
